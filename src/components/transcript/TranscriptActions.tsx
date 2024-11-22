@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Eye, Copy, FileText } from 'lucide-react';
-import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/components/ui/use-toast";
-import { supabase } from '@/integrations/supabase/client';
+import TranscriptViewer from './TranscriptViewer';
+import SummaryEditor from './SummaryEditor';
 
 interface TranscriptActionsProps {
   transcript: {
@@ -18,30 +18,8 @@ interface TranscriptActionsProps {
 
 const TranscriptActions = ({ transcript, isOwner = false }: TranscriptActionsProps) => {
   const [isEditing, setIsEditing] = useState(false);
-  const [summary, setSummary] = useState(transcript.summary || '');
+  const [isViewerOpen, setIsViewerOpen] = useState(false);
   const { toast } = useToast();
-
-  const handleView = () => {
-    const newWindow = window.open('', '_blank');
-    if (newWindow) {
-      newWindow.document.write(`
-        <html>
-          <head>
-            <title>${transcript.video_title || 'Transcript'}</title>
-            <style>
-              body { font-family: Arial, sans-serif; line-height: 1.6; padding: 20px; max-width: 800px; margin: 0 auto; }
-              h1 { color: #333; }
-              pre { white-space: pre-wrap; }
-            </style>
-          </head>
-          <body>
-            <h1>${transcript.video_title || 'Transcript'}</h1>
-            <pre>${transcript.content}</pre>
-          </body>
-        </html>
-      `);
-    }
-  };
 
   const handleCopy = async () => {
     try {
@@ -65,37 +43,14 @@ const TranscriptActions = ({ transcript, isOwner = false }: TranscriptActionsPro
     window.open(`https://chat.openai.com/chat?prompt=${encodedPrompt}`, '_blank');
   };
 
-  const handleSaveSummary = async () => {
-    try {
-      const { error } = await supabase
-        .from('transcripts')
-        .update({ summary })
-        .eq('id', transcript.id);
-
-      if (error) throw error;
-
-      setIsEditing(false);
-      toast({
-        title: "Saved!",
-        description: "Summary saved successfully",
-      });
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to save summary",
-        variant: "destructive",
-      });
-    }
-  };
-
   return (
     <div className="space-y-4">
       <div className="flex gap-2">
         <Button
           variant="outline"
           size="sm"
-          onClick={handleView}
-          className="flex items-center gap-2"
+          onClick={() => setIsViewerOpen(true)}
+          className="flex items-center gap-2 text-white hover:text-white hover:bg-white/20"
         >
           <Eye className="h-4 w-4" />
           View
@@ -104,7 +59,7 @@ const TranscriptActions = ({ transcript, isOwner = false }: TranscriptActionsPro
           variant="outline"
           size="sm"
           onClick={handleCopy}
-          className="flex items-center gap-2"
+          className="flex items-center gap-2 text-white hover:text-white hover:bg-white/20"
         >
           <Copy className="h-4 w-4" />
           Copy
@@ -114,7 +69,7 @@ const TranscriptActions = ({ transcript, isOwner = false }: TranscriptActionsPro
             variant="outline"
             size="sm"
             onClick={handleOpenInChatGPT}
-            className="flex items-center gap-2"
+            className="flex items-center gap-2 text-white hover:text-white hover:bg-white/20"
           >
             <FileText className="h-4 w-4" />
             Summarize in ChatGPT
@@ -125,34 +80,45 @@ const TranscriptActions = ({ transcript, isOwner = false }: TranscriptActionsPro
       {isOwner && (
         <div className="space-y-2">
           {isEditing ? (
-            <>
-              <Textarea
-                value={summary}
-                onChange={(e) => setSummary(e.target.value)}
-                className="min-h-[100px] bg-white/10 text-white"
-                placeholder="Enter summary..."
-              />
-              <div className="flex gap-2">
-                <Button size="sm" onClick={handleSaveSummary}>Save</Button>
-                <Button size="sm" variant="outline" onClick={() => setIsEditing(false)}>Cancel</Button>
-              </div>
-            </>
+            <SummaryEditor
+              transcriptId={transcript.id}
+              initialSummary={transcript.summary || ''}
+              onSave={() => setIsEditing(false)}
+              onCancel={() => setIsEditing(false)}
+            />
           ) : transcript.summary ? (
             <div className="space-y-2">
               <div className="bg-white/10 p-4 rounded-lg">
                 <p className="text-white whitespace-pre-wrap">{transcript.summary}</p>
               </div>
-              <Button size="sm" variant="outline" onClick={() => setIsEditing(true)}>
+              <Button 
+                size="sm" 
+                variant="outline" 
+                onClick={() => setIsEditing(true)}
+                className="text-white hover:text-white hover:bg-white/20"
+              >
                 Edit Summary
               </Button>
             </div>
           ) : (
-            <Button size="sm" variant="outline" onClick={() => setIsEditing(true)}>
+            <Button 
+              size="sm" 
+              variant="outline" 
+              onClick={() => setIsEditing(true)}
+              className="text-white hover:text-white hover:bg-white/20"
+            >
               Add Summary
             </Button>
           )}
         </div>
       )}
+
+      <TranscriptViewer
+        isOpen={isViewerOpen}
+        onClose={() => setIsViewerOpen(false)}
+        title={transcript.video_title || 'Transcript'}
+        content={transcript.content}
+      />
     </div>
   );
 };
