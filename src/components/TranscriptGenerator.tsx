@@ -45,7 +45,18 @@ const TranscriptGenerator = ({ isRTL }: TranscriptGeneratorProps) => {
       if (!response.ok) throw new Error('API request failed');
 
       const data = await response.json();
-      setTranscript(data.text || 'No transcript available');
+      
+      // Extract text from the response
+      let transcriptText = '';
+      if (data.data && Array.isArray(data.data)) {
+        transcriptText = data.data.map((item: any) => item.text).join('\n');
+      } else if (typeof data.text === 'string') {
+        transcriptText = data.text;
+      } else {
+        transcriptText = 'No transcript available';
+      }
+      
+      setTranscript(transcriptText);
       
       toast({
         title: isRTL ? 'تم بنجاح!' : 'Success!',
@@ -64,6 +75,27 @@ const TranscriptGenerator = ({ isRTL }: TranscriptGeneratorProps) => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleDownload = () => {
+    if (!transcript) return;
+    
+    const blob = new Blob([transcript], { type: 'text/plain' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'transcript.txt';
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+    
+    toast({
+      title: isRTL ? 'تم التحميل!' : 'Downloaded!',
+      description: isRTL 
+        ? 'تم تحميل النص بنجاح'
+        : 'Transcript downloaded successfully',
+    });
   };
 
   return (
@@ -98,7 +130,11 @@ const TranscriptGenerator = ({ isRTL }: TranscriptGeneratorProps) => {
             <div className="bg-white/5 p-4 rounded-lg mb-4 max-h-60 overflow-y-auto">
               <p className="text-white whitespace-pre-wrap">{transcript}</p>
             </div>
-            <Button variant="outline" className="w-full">
+            <Button 
+              variant="outline" 
+              className="w-full"
+              onClick={handleDownload}
+            >
               <Download className="mr-2 h-4 w-4" />
               {isRTL ? 'تحميل النص' : 'Download Transcript'}
             </Button>
