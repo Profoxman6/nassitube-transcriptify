@@ -118,7 +118,7 @@ const TranscriptActions = ({ transcript, isOwner = false }: TranscriptActionsPro
           <Share2 className="h-4 w-4" />
           Share
         </Button>
-        {!transcript.summary && (
+        {!transcript.summary && isOwner && (
           <Button
             variant="secondary"
             size="sm"
