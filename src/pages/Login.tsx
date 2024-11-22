@@ -34,6 +34,19 @@ const Login = () => {
               },
             },
           }}
+          providers={[]}
+          redirectTo={window.location.origin}
+          onlyThirdPartyProviders={false}
+          magicLink={false}
+          showLinks={true}
+          localization={{
+            variables: {
+              sign_in: {
+                email_label: 'Email',
+                password_label: 'Password',
+              },
+            },
+          }}
         />
       </div>
     </div>
