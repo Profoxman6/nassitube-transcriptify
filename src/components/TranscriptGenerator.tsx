@@ -5,7 +5,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { Search } from 'lucide-react';
 import TranscriptSelect from './transcript/TranscriptSelect';
 import TranscriptDisplay from './transcript/TranscriptDisplay';
-import { extractVideoId, parseTranscriptXML } from './transcript/utils';
+import { extractVideoId } from './transcript/utils';
 import type { Subtitle } from './transcript/types';
 
 interface TranscriptGeneratorProps {
@@ -36,7 +36,7 @@ const TranscriptGenerator = ({ isRTL }: TranscriptGeneratorProps) => {
     setLoading(true);
     try {
       console.log('Fetching subtitles for video:', videoId);
-      const response = await fetch(`https://yt-api.p.rapidapi.com/subtitles?idear=${videoId}`, {
+      const response = await fetch(`https://yt-api.p.rapidapi.com/subtitles?id=${videoId}`, {
         headers: {
           'X-RapidAPI-Key': '7cbc1fe90emshb480565372d1785p1cc5f4jsn92a4dc44058f',
           'X-RapidAPI-Host': 'yt-api.p.rapidapi.com'
@@ -47,15 +47,13 @@ const TranscriptGenerator = ({ isRTL }: TranscriptGeneratorProps) => {
         throw new Error(`API request failed with status ${response.status}`);
       }
 
-      const rawData = await response.text();
-      console.log('Raw API response:', rawData);
-      
-      const data = JSON.parse(rawData);
-      console.log('Parsed data:', data);
+      const data = await response.json();
+      console.log('API Response:', data);
       
       if (data.subtitles && Array.isArray(data.subtitles)) {
         setSubtitles(data.subtitles);
         
+        // Try to find English subtitles first
         const englishSubtitle = data.subtitles.find(
           (sub: Subtitle) => sub.languageCode === 'en' || sub.languageCode.startsWith('en-')
         );
@@ -93,16 +91,24 @@ const TranscriptGenerator = ({ isRTL }: TranscriptGeneratorProps) => {
       }
       
       const xmlText = await response.text();
-      console.log('Raw transcript response:', xmlText);
+      console.log('Raw transcript XML:', xmlText);
       
-      const parsedTranscript = parseTranscriptXML(xmlText);
-      console.log('Parsed transcript:', parsedTranscript);
+      // Parse the XML content
+      const parser = new DOMParser();
+      const xmlDoc = parser.parseFromString(xmlText, "text/xml");
+      const textElements = xmlDoc.getElementsByTagName("text");
       
-      if (!parsedTranscript) {
+      // Extract and join the text content
+      const transcriptText = Array.from(textElements)
+        .map(element => element.textContent)
+        .filter(text => text !== null)
+        .join('\n');
+      
+      if (!transcriptText) {
         throw new Error('Failed to parse transcript XML');
       }
       
-      setTranscript(parsedTranscript);
+      setTranscript(transcriptText);
     } catch (error) {
       console.error('Error fetching transcript:', error);
       setTranscript('Failed to load transcript');
