@@ -36,6 +36,7 @@ export type Database = {
           created_at: string
           id: string
           language: string
+          summary: string | null
           user_id: string | null
           video_id: string
           video_title: string | null
@@ -46,6 +47,7 @@ export type Database = {
           created_at?: string
           id?: string
           language: string
+          summary?: string | null
           user_id?: string | null
           video_id: string
           video_title?: string | null
@@ -56,6 +58,7 @@ export type Database = {
           created_at?: string
           id?: string
           language?: string
+          summary?: string | null
           user_id?: string | null
           video_id?: string
           video_title?: string | null
