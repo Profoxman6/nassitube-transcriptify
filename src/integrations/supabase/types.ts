@@ -38,6 +38,7 @@ export type Database = {
           language: string
           user_id: string | null
           video_id: string
+          video_title: string | null
           video_url: string
         }
         Insert: {
@@ -47,6 +48,7 @@ export type Database = {
           language: string
           user_id?: string | null
           video_id: string
+          video_title?: string | null
           video_url: string
         }
         Update: {
@@ -56,6 +58,7 @@ export type Database = {
           language?: string
           user_id?: string | null
           video_id?: string
+          video_title?: string | null
           video_url?: string
         }
         Relationships: []
