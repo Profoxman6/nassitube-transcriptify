@@ -2,24 +2,14 @@ import { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/use-toast";
-import { Search, Download } from 'lucide-react';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Search } from 'lucide-react';
+import TranscriptSelect from './transcript/TranscriptSelect';
+import TranscriptDisplay from './transcript/TranscriptDisplay';
+import { extractVideoId, parseTranscriptXML } from './transcript/utils';
+import type { Subtitle } from './transcript/types';
 
 interface TranscriptGeneratorProps {
   isRTL: boolean;
-}
-
-interface Subtitle {
-  languageName: string;
-  languageCode: string;
-  isTranslatable: boolean;
-  url: string;
 }
 
 const TranscriptGenerator = ({ isRTL }: TranscriptGeneratorProps) => {
@@ -29,12 +19,6 @@ const TranscriptGenerator = ({ isRTL }: TranscriptGeneratorProps) => {
   const [subtitles, setSubtitles] = useState<Subtitle[]>([]);
   const [selectedLanguage, setSelectedLanguage] = useState('');
   const { toast } = useToast();
-
-  const extractVideoId = (url: string) => {
-    const regex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/;
-    const match = url.match(regex);
-    return match ? match[1] : null;
-  };
 
   const generateTranscript = async () => {
     const videoId = extractVideoId(url);
@@ -51,6 +35,7 @@ const TranscriptGenerator = ({ isRTL }: TranscriptGeneratorProps) => {
 
     setLoading(true);
     try {
+      console.log('Fetching subtitles for video:', videoId);
       const response = await fetch(`https://yt-api.p.rapidapi.com/subtitles?idear=${videoId}`, {
         headers: {
           'X-RapidAPI-Key': '7cbc1fe90emshb480565372d1785p1cc5f4jsn92a4dc44058f',
@@ -58,43 +43,39 @@ const TranscriptGenerator = ({ isRTL }: TranscriptGeneratorProps) => {
         }
       });
 
-      if (!response.ok) throw new Error('API request failed');
+      if (!response.ok) {
+        throw new Error(`API request failed with status ${response.status}`);
+      }
 
-      const data = await response.json();
+      const rawData = await response.text();
+      console.log('Raw API response:', rawData);
       
-      // Parse the response string if it's a string
-      const parsedData = typeof data === 'string' ? JSON.parse(data) : data;
+      const data = JSON.parse(rawData);
+      console.log('Parsed data:', data);
       
-      if (parsedData.subtitles && Array.isArray(parsedData.subtitles)) {
-        setSubtitles(parsedData.subtitles);
+      if (data.subtitles && Array.isArray(data.subtitles)) {
+        setSubtitles(data.subtitles);
         
-        // Auto-select English if available
-        const englishSubtitle = parsedData.subtitles.find(
+        const englishSubtitle = data.subtitles.find(
           (sub: Subtitle) => sub.languageCode === 'en' || sub.languageCode.startsWith('en-')
         );
+        
         if (englishSubtitle) {
           setSelectedLanguage(englishSubtitle.languageCode);
           await fetchTranscript(englishSubtitle.url);
-        } else if (parsedData.subtitles.length > 0) {
-          setSelectedLanguage(parsedData.subtitles[0].languageCode);
-          await fetchTranscript(parsedData.subtitles[0].url);
+        } else if (data.subtitles.length > 0) {
+          setSelectedLanguage(data.subtitles[0].languageCode);
+          await fetchTranscript(data.subtitles[0].url);
         }
       } else {
-        setTranscript('No transcripts available');
-        toast({
-          title: isRTL ? 'لا توجد نصوص' : 'No Transcripts',
-          description: isRTL 
-            ? 'لا تتوفر نصوص لهذا الفيديو'
-            : 'No transcripts available for this video',
-          variant: 'destructive',
-        });
+        throw new Error('No subtitles found in the response');
       }
     } catch (error) {
+      console.error('Error generating transcript:', error);
+      setTranscript('');
       toast({
         title: isRTL ? 'حدث خطأ' : 'Error',
-        description: isRTL 
-          ? 'حدث خطأ أثناء إنشاء النص'
-          : 'An error occurred while generating the transcript',
+        description: error instanceof Error ? error.message : 'An unknown error occurred',
         variant: 'destructive',
       });
     } finally {
@@ -104,17 +85,30 @@ const TranscriptGenerator = ({ isRTL }: TranscriptGeneratorProps) => {
 
   const fetchTranscript = async (subtitleUrl: string) => {
     try {
+      console.log('Fetching transcript from URL:', subtitleUrl);
       const response = await fetch(subtitleUrl);
-      if (!response.ok) throw new Error('Failed to fetch transcript');
-      const data = await response.text();
-      setTranscript(data);
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch transcript: ${response.status}`);
+      }
+      
+      const xmlText = await response.text();
+      console.log('Raw transcript response:', xmlText);
+      
+      const parsedTranscript = parseTranscriptXML(xmlText);
+      console.log('Parsed transcript:', parsedTranscript);
+      
+      if (!parsedTranscript) {
+        throw new Error('Failed to parse transcript XML');
+      }
+      
+      setTranscript(parsedTranscript);
     } catch (error) {
+      console.error('Error fetching transcript:', error);
       setTranscript('Failed to load transcript');
       toast({
         title: isRTL ? 'حدث خطأ' : 'Error',
-        description: isRTL 
-          ? 'فشل في تحميل النص'
-          : 'Failed to load the transcript',
+        description: error instanceof Error ? error.message : 'Failed to load the transcript',
         variant: 'destructive',
       });
     }
@@ -177,39 +171,20 @@ const TranscriptGenerator = ({ isRTL }: TranscriptGeneratorProps) => {
         </div>
 
         {subtitles.length > 0 && (
-          <div className="mb-4">
-            <Select
-              value={selectedLanguage}
-              onValueChange={handleLanguageChange}
-            >
-              <SelectTrigger className="w-full bg-white/20 text-white">
-                <SelectValue placeholder={isRTL ? "اختر اللغة" : "Select language"} />
-              </SelectTrigger>
-              <SelectContent>
-                {subtitles.map((subtitle) => (
-                  <SelectItem key={subtitle.languageCode} value={subtitle.languageCode}>
-                    {subtitle.languageName}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          <TranscriptSelect
+            subtitles={subtitles}
+            selectedLanguage={selectedLanguage}
+            onLanguageChange={handleLanguageChange}
+            isRTL={isRTL}
+          />
         )}
 
         {transcript && (
-          <div className="animate-fade-up">
-            <div className="bg-white/5 p-4 rounded-lg mb-4 max-h-60 overflow-y-auto">
-              <p className="text-white whitespace-pre-wrap">{transcript}</p>
-            </div>
-            <Button 
-              variant="outline" 
-              className="w-full"
-              onClick={handleDownload}
-            >
-              <Download className="mr-2 h-4 w-4" />
-              {isRTL ? 'تحميل النص' : 'Download Transcript'}
-            </Button>
-          </div>
+          <TranscriptDisplay
+            transcript={transcript}
+            onDownload={handleDownload}
+            isRTL={isRTL}
+          />
         )}
       </div>
     </section>
