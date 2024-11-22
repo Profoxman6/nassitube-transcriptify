@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { Button } from "@/components/ui/button";
-import { Eye, Copy, FileText } from 'lucide-react';
+import { Eye, Copy, FileText, ExternalLink, Share2 } from 'lucide-react';
 import { useToast } from "@/components/ui/use-toast";
 import TranscriptViewer from './TranscriptViewer';
-import SummaryEditor from './SummaryEditor';
+import TranscriptSummary from './TranscriptSummary';
 
 interface TranscriptActionsProps {
   transcript: {
@@ -17,7 +17,6 @@ interface TranscriptActionsProps {
 }
 
 const TranscriptActions = ({ transcript, isOwner = false }: TranscriptActionsProps) => {
-  const [isEditing, setIsEditing] = useState(false);
   const [isViewerOpen, setIsViewerOpen] = useState(false);
   const { toast } = useToast();
 
@@ -38,14 +37,45 @@ const TranscriptActions = ({ transcript, isOwner = false }: TranscriptActionsPro
   };
 
   const handleOpenInChatGPT = () => {
-    const prompt = `This is a video (${transcript.video_url}), titled (${transcript.video_title || 'Untitled'}). Summarize it in detail for me;\n\nVideo transcript:\n${transcript.content}`;
-    const encodedPrompt = encodeURIComponent(prompt);
+    // Create a shorter prompt to avoid URI length issues
+    const shortPrompt = `Please summarize this YouTube video transcript:\n\n${transcript.content.slice(0, 2000)}...`;
+    const encodedPrompt = encodeURIComponent(shortPrompt);
     window.open(`https://chat.openai.com/chat?prompt=${encodedPrompt}`, '_blank');
+  };
+
+  const handleShare = async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: transcript.video_title,
+          text: `Check out this transcript of "${transcript.video_title}"`,
+          url: window.location.href,
+        });
+        toast({
+          title: "Shared!",
+          description: "Content shared successfully",
+        });
+      } catch (error) {
+        if (error instanceof Error && error.name !== 'AbortError') {
+          toast({
+            title: "Error",
+            description: "Failed to share content",
+            variant: "destructive",
+          });
+        }
+      }
+    } else {
+      await navigator.clipboard.writeText(window.location.href);
+      toast({
+        title: "Link Copied!",
+        description: "Share link copied to clipboard",
+      });
+    }
   };
 
   return (
     <div className="space-y-4">
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-2">
         <Button
           variant="secondary"
           size="sm"
@@ -64,6 +94,24 @@ const TranscriptActions = ({ transcript, isOwner = false }: TranscriptActionsPro
           <Copy className="h-4 w-4" />
           Copy
         </Button>
+        <Button
+          variant="secondary"
+          size="sm"
+          onClick={() => window.open(transcript.video_url, '_blank')}
+          className="flex items-center gap-2 bg-secondary/90 text-secondary-foreground hover:bg-secondary"
+        >
+          <ExternalLink className="h-4 w-4" />
+          View Video
+        </Button>
+        <Button
+          variant="secondary"
+          size="sm"
+          onClick={handleShare}
+          className="flex items-center gap-2 bg-secondary/90 text-secondary-foreground hover:bg-secondary"
+        >
+          <Share2 className="h-4 w-4" />
+          Share
+        </Button>
         {!transcript.summary && (
           <Button
             variant="secondary"
@@ -77,41 +125,11 @@ const TranscriptActions = ({ transcript, isOwner = false }: TranscriptActionsPro
         )}
       </div>
       
-      {isOwner && (
-        <div className="space-y-2">
-          {isEditing ? (
-            <SummaryEditor
-              transcriptId={transcript.id}
-              initialSummary={transcript.summary || ''}
-              onSave={() => setIsEditing(false)}
-              onCancel={() => setIsEditing(false)}
-            />
-          ) : transcript.summary ? (
-            <div className="space-y-2">
-              <div className="bg-white/10 p-4 rounded-lg">
-                <p className="text-white whitespace-pre-wrap">{transcript.summary}</p>
-              </div>
-              <Button 
-                size="sm" 
-                variant="secondary"
-                onClick={() => setIsEditing(true)}
-                className="bg-secondary/90 text-secondary-foreground hover:bg-secondary"
-              >
-                Edit Summary
-              </Button>
-            </div>
-          ) : (
-            <Button 
-              size="sm" 
-              variant="secondary"
-              onClick={() => setIsEditing(true)}
-              className="bg-secondary/90 text-secondary-foreground hover:bg-secondary"
-            >
-              Add Summary
-            </Button>
-          )}
-        </div>
-      )}
+      <TranscriptSummary
+        transcriptId={transcript.id}
+        summary={transcript.summary}
+        isOwner={isOwner}
+      />
 
       <TranscriptViewer
         isOpen={isViewerOpen}
