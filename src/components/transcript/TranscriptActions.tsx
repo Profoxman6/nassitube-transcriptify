@@ -47,29 +47,29 @@ const TranscriptActions = ({ transcript, isOwner = false }: TranscriptActionsPro
     <div className="space-y-4">
       <div className="flex gap-2">
         <Button
-          variant="outline"
+          variant="secondary"
           size="sm"
           onClick={() => setIsViewerOpen(true)}
-          className="flex items-center gap-2 text-white hover:text-white hover:bg-white/20"
+          className="flex items-center gap-2 bg-secondary/90 text-secondary-foreground hover:bg-secondary"
         >
           <Eye className="h-4 w-4" />
           View
         </Button>
         <Button
-          variant="outline"
+          variant="secondary"
           size="sm"
           onClick={handleCopy}
-          className="flex items-center gap-2 text-white hover:text-white hover:bg-white/20"
+          className="flex items-center gap-2 bg-secondary/90 text-secondary-foreground hover:bg-secondary"
         >
           <Copy className="h-4 w-4" />
           Copy
         </Button>
         {!transcript.summary && (
           <Button
-            variant="outline"
+            variant="secondary"
             size="sm"
             onClick={handleOpenInChatGPT}
-            className="flex items-center gap-2 text-white hover:text-white hover:bg-white/20"
+            className="flex items-center gap-2 bg-secondary/90 text-secondary-foreground hover:bg-secondary"
           >
             <FileText className="h-4 w-4" />
             Summarize in ChatGPT
@@ -93,9 +93,9 @@ const TranscriptActions = ({ transcript, isOwner = false }: TranscriptActionsPro
               </div>
               <Button 
                 size="sm" 
-                variant="outline" 
+                variant="secondary"
                 onClick={() => setIsEditing(true)}
-                className="text-white hover:text-white hover:bg-white/20"
+                className="bg-secondary/90 text-secondary-foreground hover:bg-secondary"
               >
                 Edit Summary
               </Button>
@@ -103,9 +103,9 @@ const TranscriptActions = ({ transcript, isOwner = false }: TranscriptActionsPro
           ) : (
             <Button 
               size="sm" 
-              variant="outline" 
+              variant="secondary"
               onClick={() => setIsEditing(true)}
-              className="text-white hover:text-white hover:bg-white/20"
+              className="bg-secondary/90 text-secondary-foreground hover:bg-secondary"
             >
               Add Summary
             </Button>
