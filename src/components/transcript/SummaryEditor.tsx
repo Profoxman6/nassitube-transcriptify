@@ -16,7 +16,6 @@ const SummaryEditor = ({ transcriptId, initialSummary, onSave, onCancel }: Summa
   const [summary, setSummary] = useState(initialSummary);
   const { toast } = useToast();
 
-  // Debounced save function to improve performance
   const debouncedSave = useCallback(
     debounce(async (newSummary: string) => {
       try {
@@ -32,6 +31,7 @@ const SummaryEditor = ({ transcriptId, initialSummary, onSave, onCancel }: Summa
           title: "Error",
           description: "Failed to save summary",
           variant: "destructive",
+          duration: 7000,
         });
       }
     }, 500),

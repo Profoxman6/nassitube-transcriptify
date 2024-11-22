@@ -26,50 +26,56 @@ const TranscriptActions = ({ transcript, isOwner = false }: TranscriptActionsPro
       toast({
         title: "Copied!",
         description: "Transcript copied to clipboard",
+        duration: 7000,
       });
     } catch (error) {
       toast({
         title: "Error",
         description: "Failed to copy transcript",
         variant: "destructive",
+        duration: 7000,
       });
     }
   };
 
   const handleOpenInChatGPT = () => {
-    // Create a shorter prompt to avoid URI length issues
     const shortPrompt = `Please summarize this YouTube video transcript:\n\n${transcript.content.slice(0, 2000)}...`;
     const encodedPrompt = encodeURIComponent(shortPrompt);
     window.open(`https://chat.openai.com/chat?prompt=${encodedPrompt}`, '_blank');
   };
 
   const handleShare = async () => {
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: transcript.video_title,
-          text: `Check out this transcript of "${transcript.video_title}"`,
-          url: window.location.href,
-        });
+    const shareData = {
+      title: transcript.video_title,
+      text: `Check out this transcript of "${transcript.video_title}"`,
+      url: window.location.href,
+    };
+
+    try {
+      if (navigator.share && navigator.canShare(shareData)) {
+        await navigator.share(shareData);
         toast({
           title: "Shared!",
           description: "Content shared successfully",
+          duration: 7000,
         });
-      } catch (error) {
-        if (error instanceof Error && error.name !== 'AbortError') {
-          toast({
-            title: "Error",
-            description: "Failed to share content",
-            variant: "destructive",
-          });
-        }
+      } else {
+        await navigator.clipboard.writeText(window.location.href);
+        toast({
+          title: "Link Copied!",
+          description: "Share link copied to clipboard",
+          duration: 7000,
+        });
       }
-    } else {
-      await navigator.clipboard.writeText(window.location.href);
-      toast({
-        title: "Link Copied!",
-        description: "Share link copied to clipboard",
-      });
+    } catch (error) {
+      if (error instanceof Error && error.name !== 'AbortError') {
+        toast({
+          title: "Error",
+          description: "Failed to share content",
+          variant: "destructive",
+          duration: 7000,
+        });
+      }
     }
   };
 

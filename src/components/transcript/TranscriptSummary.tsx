@@ -22,12 +22,14 @@ const TranscriptSummary = ({ transcriptId, summary, isOwner = false }: Transcrip
       toast({
         title: "Copied!",
         description: "Summary copied to clipboard",
+        duration: 7000,
       });
     } catch (error) {
       toast({
         title: "Error",
         description: "Failed to copy summary",
         variant: "destructive",
+        duration: 7000,
       });
     }
   };
@@ -36,7 +38,7 @@ const TranscriptSummary = ({ transcriptId, summary, isOwner = false }: Transcrip
 
   return (
     <div className="space-y-2">
-      {isEditing ? (
+      {isEditing && isOwner ? (
         <SummaryEditor
           transcriptId={transcriptId}
           initialSummary={summary || ''}
