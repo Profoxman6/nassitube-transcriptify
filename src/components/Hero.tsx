@@ -16,10 +16,15 @@ const Hero = ({ isRTL }: HeroProps) => {
         <h1 className="text-4xl md:text-6xl font-bold text-white mb-6">
           {isRTL ? 'حول مقاطع يوتيوب إلى نصوص' : 'Transform YouTube Videos into Text'}
         </h1>
-        <p className="text-xl text-gray-300 mb-8">
+        <p className="text-xl text-gray-300 mb-4">
           {isRTL 
             ? 'احصل على نصوص دقيقة لمقاطع اليوتيوب بنقرة واحدة'
             : 'Get accurate transcripts of YouTube videos with just one click'}
+        </p>
+        <p className="text-sm text-gray-400 mb-8">
+          {isRTL
+            ? 'تم تطويره بواسطة م. حسام الدين حسن - خبير في التعليم الإلكتروني وصناعة المحتوى'
+            : 'Developed by Hossamudin Hassan - E-learning and Content Creation Expert'}
         </p>
       </motion.div>
 

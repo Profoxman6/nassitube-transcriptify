@@ -1,15 +1,13 @@
 import { useState } from 'react';
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { useToast } from "@/components/ui/use-toast";
-import { Cloud, Download, Clipboard, User, Search } from "lucide-react";
+import { User } from "lucide-react";
 import Hero from '@/components/Hero';
 import Features from '@/components/Features';
 import TranscriptGenerator from '@/components/TranscriptGenerator';
+import Footer from '@/components/Footer';
 
 const Index = () => {
   const [isRTL, setIsRTL] = useState(false);
-  const { toast } = useToast();
 
   return (
     <div className={`min-h-screen bg-gradient-to-br from-emerald-900 to-teal-900 ${isRTL ? 'rtl' : 'ltr'}`}>
@@ -35,6 +33,8 @@ const Index = () => {
         <Features isRTL={isRTL} />
         <TranscriptGenerator isRTL={isRTL} />
       </main>
+
+      <Footer isRTL={isRTL} />
     </div>
   );
 };
