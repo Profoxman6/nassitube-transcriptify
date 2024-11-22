@@ -10,6 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Search, Home, Trash2 } from 'lucide-react';
+import TranscriptActions from '@/components/transcript/TranscriptActions';
 
 const Profile = () => {
   const navigate = useNavigate();
@@ -218,17 +219,8 @@ const Profile = () => {
                         </Button>
                       </CardHeader>
                       <CardContent>
-                        <p className="text-sm text-gray-300 line-clamp-2">{transcript.content}</p>
-                        <div className="mt-2">
-                          <a
-                            href={transcript.video_url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-yellow-300 hover:underline text-sm"
-                          >
-                            View Video
-                          </a>
-                        </div>
+                        <p className="text-sm text-gray-300 line-clamp-2 mb-4">{transcript.content}</p>
+                        <TranscriptActions transcript={transcript} isOwner={true} />
                       </CardContent>
                     </Card>
                   ))}
@@ -245,17 +237,8 @@ const Profile = () => {
                         </p>
                       </CardHeader>
                       <CardContent>
-                        <p className="text-sm text-gray-300 line-clamp-2">{transcript.content}</p>
-                        <div className="mt-2">
-                          <a
-                            href={transcript.video_url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-yellow-300 hover:underline text-sm"
-                          >
-                            View Video
-                          </a>
-                        </div>
+                        <p className="text-sm text-gray-300 line-clamp-2 mb-4">{transcript.content}</p>
+                        <TranscriptActions transcript={transcript} />
                       </CardContent>
                     </Card>
                   ))}
