@@ -40,7 +40,7 @@ const Navigation = () => {
             </Link>
           </Button>
 
-          {user && (
+          {user && location.pathname !== '/all-transcripts' && (
             <>
               <Button
                 variant={isActive('/history') ? "secondary" : "ghost"}
