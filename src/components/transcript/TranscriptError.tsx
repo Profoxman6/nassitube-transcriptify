@@ -8,7 +8,7 @@ interface TranscriptErrorProps {
 
 const TranscriptError = ({ error, isRTL }: TranscriptErrorProps) => {
   const getErrorMessage = () => {
-    if (!error || !error.message) {
+    if (!error) {
       return {
         title: isRTL ? 'خطأ غير معروف' : 'Unknown Error',
         description: isRTL 
@@ -17,24 +17,13 @@ const TranscriptError = ({ error, isRTL }: TranscriptErrorProps) => {
       };
     }
 
-    try {
-      // Try to parse the error message as JSON first
-      const parsedError = error.message.includes('{') 
-        ? JSON.parse(error.message)
-        : null;
-      
-      const errorMessage = parsedError?.body || error.message;
-
-      if (typeof errorMessage === 'string' && errorMessage.includes('Daily limit')) {
-        return {
-          title: isRTL ? 'تم الوصول للحد اليومي' : 'Daily Limit Reached',
-          description: isRTL 
-            ? 'لقد وصلت إلى الحد الأقصى اليومي (10 نصوص). حاول مرة أخرى غداً.'
-            : 'You have reached your daily limit (10 transcripts). Try again tomorrow.',
-        };
-      }
-    } catch (e) {
-      // If JSON parsing fails, continue with the original error message
+    if (error.message === 'Daily limit reached') {
+      return {
+        title: isRTL ? 'تم الوصول للحد اليومي' : 'Daily Limit Reached',
+        description: isRTL 
+          ? 'لقد وصلت إلى الحد الأقصى اليومي (10 نصوص). حاول مرة أخرى غداً.'
+          : 'You have reached your daily limit (10 transcripts). Try again tomorrow.',
+      };
     }
 
     return {
