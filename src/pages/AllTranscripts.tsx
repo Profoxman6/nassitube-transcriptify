@@ -1,15 +1,16 @@
-import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import TranscriptActions from '@/components/transcript/TranscriptActions';
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { Transcript } from "@/types/database.types";
+import { Card } from "@/components/ui/card";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import Navigation from "@/components/Navigation";
+import { Button } from "@/components/ui/button";
+import { Copy, Download } from "lucide-react";
+import { toast } from "@/components/ui/use-toast";
 
 const AllTranscripts = () => {
-  const [searchTerm, setSearchTerm] = useState('');
-
   const { data: transcripts, isLoading } = useQuery({
-    queryKey: ['allTranscripts'],
+    queryKey: ['all-transcripts'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('transcripts')
@@ -17,65 +18,79 @@ const AllTranscripts = () => {
         .order('created_at', { ascending: false });
       
       if (error) throw error;
-      return data || [];
-    },
+      return data as Transcript[];
+    }
   });
 
-  const filteredTranscripts = transcripts?.filter(transcript => 
-    transcript.video_title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    transcript.content?.toLowerCase().includes(searchTerm.toLowerCase())
-  ) || [];
+  const copyTranscript = async (content: string) => {
+    await navigator.clipboard.writeText(content);
+    toast({
+      title: "Copied!",
+      description: "Transcript copied to clipboard",
+    });
+  };
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-emerald-900 to-teal-900 p-4">
-        <div className="max-w-6xl mx-auto">
-          <div className="flex justify-center items-center h-64">
-            <p className="text-white">Loading transcripts...</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  const downloadTranscript = (content: string, videoTitle: string) => {
+    const blob = new Blob([content], { type: 'text/plain' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${videoTitle || 'transcript'}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+    toast({
+      title: "Downloaded!",
+      description: "Transcript downloaded successfully",
+    });
+  };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-900 to-teal-900 p-4">
-      <div className="max-w-6xl mx-auto space-y-6">
-        <Card className="bg-white/10 border-none">
-          <CardHeader>
-            <div className="flex justify-between items-center">
-              <CardTitle className="text-white">All Community Transcripts</CardTitle>
-              <div className="w-64">
-                <Input
-                  type="text"
-                  placeholder="Search transcripts..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="bg-white/20 text-white placeholder:text-gray-400"
-                />
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {filteredTranscripts.map((transcript) => (
-                <Card key={transcript.id} className="bg-white/5 text-white border-none">
-                  <CardHeader>
-                    <CardTitle className="text-lg">{transcript.video_title || 'Untitled'}</CardTitle>
-                    <p className="text-sm text-gray-300">
-                      {new Date(transcript.created_at).toLocaleDateString()}
-                    </p>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-sm text-gray-300 line-clamp-2 mb-4">{transcript.content}</p>
-                    <TranscriptActions transcript={transcript} />
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+    <div className="min-h-screen bg-gradient-to-b from-gray-900 to-gray-800 text-white pb-24 md:pb-0">
+      <Navigation />
+      <main className="container mx-auto px-4 pt-20">
+        <h1 className="text-3xl font-bold mb-6">Community Transcripts</h1>
+        {isLoading ? (
+          <p>Loading transcripts...</p>
+        ) : (
+          <div className="grid gap-4">
+            {transcripts?.map((transcript) => (
+              <Card key={transcript.id} className="p-4 bg-gray-800 border-gray-700">
+                <div className="flex flex-col gap-2">
+                  <h2 className="text-xl font-semibold">{transcript.video_title || 'Untitled Video'}</h2>
+                  <ScrollArea className="h-32 rounded-md border p-2">
+                    <p className="text-gray-300">{transcript.content}</p>
+                  </ScrollArea>
+                  {transcript.summary && (
+                    <ScrollArea className="h-24 rounded-md border p-2 mt-2">
+                      <p className="text-gray-300">{transcript.summary}</p>
+                    </ScrollArea>
+                  )}
+                  <div className="flex gap-2 mt-2">
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => copyTranscript(transcript.content)}
+                    >
+                      <Copy className="h-4 w-4 mr-2" />
+                      Copy
+                    </Button>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => downloadTranscript(transcript.content, transcript.video_title || '')}
+                    >
+                      <Download className="h-4 w-4 mr-2" />
+                      Download
+                    </Button>
+                  </div>
+                </div>
+              </Card>
+            ))}
+          </div>
+        )}
+      </main>
     </div>
   );
 };
