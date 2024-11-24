@@ -16,13 +16,21 @@ serve(async (req) => {
   }
 
   try {
+    // Check if API key is configured
+    if (!GEMINI_API_KEY) {
+      console.error('Gemini API key not configured')
+      throw new Error('Gemini API key not configured')
+    }
+
     const { transcript, videoTitle } = await req.json()
 
     if (!transcript) {
+      console.error('No transcript provided')
       throw new Error('Transcript is required')
     }
 
-    // Carefully crafted prompt using best practices
+    console.log('Generating summary for video:', videoTitle)
+
     const prompt = `As an expert content analyst, your task is to create a comprehensive yet concise summary of this YouTube video transcript. The video is titled: "${videoTitle}".
 
 Here's the transcript:
@@ -76,13 +84,21 @@ Format the summary in clear paragraphs, focusing on readability and coherence.`
     })
 
     if (!response.ok) {
-      const error = await response.text()
-      console.error('Gemini API Error:', error)
-      throw new Error('Failed to generate summary')
+      const errorText = await response.text()
+      console.error('Gemini API Error Response:', errorText)
+      throw new Error(`Gemini API failed with status ${response.status}: ${errorText}`)
     }
 
     const data = await response.json()
+    
+    if (!data.candidates?.[0]?.content?.parts?.[0]?.text) {
+      console.error('Invalid response format from Gemini API:', data)
+      throw new Error('Invalid response format from Gemini API')
+    }
+
     const summary = data.candidates[0].content.parts[0].text
+
+    console.log('Successfully generated summary')
 
     return new Response(
       JSON.stringify({ summary }),
@@ -90,8 +106,13 @@ Format the summary in clear paragraphs, focusing on readability and coherence.`
     )
   } catch (error) {
     console.error('Error in generate-summary function:', error)
+    
+    // Return a more detailed error response
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ 
+        error: error.message,
+        details: error.stack
+      }),
       { 
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
