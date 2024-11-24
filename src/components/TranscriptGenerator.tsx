@@ -272,6 +272,8 @@ const TranscriptGenerator = ({ isRTL }: TranscriptGeneratorProps) => {
         {transcript && (
           <TranscriptDisplay
             transcript={transcript}
+            transcriptId={extractVideoId(url) || ''}
+            videoTitle={videoTitle}
             onDownload={handleDownload}
             isRTL={isRTL}
           />
