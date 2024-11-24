@@ -1,6 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from "@/components/ui/use-toast";
-import { handleTranscriptError } from '../utils/errorHandling';
 
 export const saveTranscript = async (
   userId: string | undefined,
@@ -19,7 +18,7 @@ export const saveTranscript = async (
         : 'Please login to save transcripts',
       variant: 'destructive',
     });
-    return;
+    throw new Error('User not logged in');
   }
 
   const { error: saveError } = await supabase
@@ -34,6 +33,7 @@ export const saveTranscript = async (
     });
 
   if (saveError) {
+    // Let the error propagate to be handled by handleTranscriptError
     throw saveError;
   }
 
