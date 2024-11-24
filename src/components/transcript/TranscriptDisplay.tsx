@@ -27,6 +27,26 @@ const TranscriptDisplay = ({
   const { user } = useAuth();
   const { toast } = useToast();
 
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(transcript);
+      toast({
+        title: isRTL ? 'تم النسخ!' : 'Copied!',
+        description: isRTL 
+          ? 'تم نسخ النص إلى الحافظة'
+          : 'Transcript copied to clipboard',
+      });
+    } catch (error) {
+      toast({
+        title: isRTL ? 'خطأ' : 'Error',
+        description: isRTL 
+          ? 'فشل نسخ النص'
+          : 'Failed to copy transcript',
+        variant: 'destructive',
+      });
+    }
+  };
+
   const handleCopySummary = async () => {
     if (!summary) return;
     try {
@@ -69,6 +89,8 @@ const TranscriptDisplay = ({
     });
   };
 
+  const previewText = transcript.split(' ').slice(0, 20).join(' ') + '...';
+
   return (
     <div className="animate-fade-up space-y-4">
       <div className="flex flex-wrap gap-2 mb-4">
@@ -78,6 +100,14 @@ const TranscriptDisplay = ({
         >
           <Download className="mr-2 h-4 w-4" />
           {isRTL ? 'تحميل النص' : 'Download Transcript'}
+        </Button>
+
+        <Button 
+          variant="outline" 
+          onClick={handleCopy}
+        >
+          <Copy className="mr-2 h-4 w-4" />
+          {isRTL ? 'نسخ النص' : 'Copy Transcript'}
         </Button>
 
         {user && (
@@ -106,13 +136,18 @@ const TranscriptDisplay = ({
             </Button>
           </CollapsibleTrigger>
         </div>
-        <CollapsibleContent>
-          <EnhancedEditor 
-            content={transcript}
-            isRTL={isRTL}
-            className="mb-4"
-          />
-        </CollapsibleContent>
+        <div className="bg-white/5 rounded-lg p-4">
+          {!isOpen && (
+            <p className="text-white">{previewText}</p>
+          )}
+          <CollapsibleContent>
+            <EnhancedEditor 
+              content={transcript}
+              isRTL={isRTL}
+              className="mt-4"
+            />
+          </CollapsibleContent>
+        </div>
       </Collapsible>
 
       {summary && (

@@ -4,6 +4,8 @@ import { User } from "lucide-react";
 import Hero from '@/components/Hero';
 import Features from '@/components/Features';
 import TranscriptGenerator from '@/components/TranscriptGenerator';
+import AppPromotion from '@/components/AppPromotion';
+import AboutFounder from '@/components/AboutFounder';
 import Footer from '@/components/Footer';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/components/AuthProvider';
@@ -48,6 +50,8 @@ const Index = () => {
         <Hero isRTL={isRTL} />
         <Features isRTL={isRTL} />
         <TranscriptGenerator isRTL={isRTL} />
+        <AppPromotion isRTL={isRTL} />
+        <AboutFounder isRTL={isRTL} />
       </main>
 
       <Footer isRTL={isRTL} />
