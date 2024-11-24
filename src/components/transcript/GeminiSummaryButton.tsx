@@ -32,11 +32,11 @@ const GeminiSummaryButton = ({
       if (error) throw error;
 
       if (data.summary) {
-        // Update the transcript with the new summary
+        // Update the transcript with the new summary using video_id
         const { error: updateError } = await supabase
           .from('transcripts')
           .update({ summary: data.summary })
-          .eq('id', transcriptId);
+          .eq('video_id', transcriptId);
 
         if (updateError) throw updateError;
 
