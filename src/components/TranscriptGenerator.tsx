@@ -93,7 +93,7 @@ const TranscriptGenerator = ({ isRTL }: TranscriptGeneratorProps) => {
 
     setLoading(true);
     try {
-      // First check if we already have this transcript
+      // Update the query to use video_id instead of id
       const { data: existingTranscripts, error: fetchError } = await supabase
         .from('transcripts')
         .select('content, video_title')
@@ -102,7 +102,6 @@ const TranscriptGenerator = ({ isRTL }: TranscriptGeneratorProps) => {
 
       if (fetchError) throw fetchError;
 
-      // If we found an existing transcript, use it
       if (existingTranscripts && existingTranscripts.length > 0) {
         setTranscript(existingTranscripts[0].content);
         setVideoTitle(existingTranscripts[0].video_title || '');
