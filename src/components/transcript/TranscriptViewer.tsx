@@ -4,6 +4,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface TranscriptViewerProps {
   isOpen: boolean;
@@ -15,13 +16,15 @@ interface TranscriptViewerProps {
 const TranscriptViewer = ({ isOpen, onClose, title, content }: TranscriptViewerProps) => {
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto bg-white/10 backdrop-blur-sm border-none">
+      <DialogContent className="max-w-3xl h-[80vh] bg-white/10 backdrop-blur-sm border-none">
         <DialogHeader>
           <DialogTitle className="text-white text-xl">{title}</DialogTitle>
         </DialogHeader>
-        <div className="mt-4">
-          <pre className="whitespace-pre-wrap text-white font-sans">{content}</pre>
-        </div>
+        <ScrollArea className="h-[calc(80vh-8rem)] mt-4">
+          <div className="pr-4">
+            <pre className="whitespace-pre-wrap text-white font-sans">{content}</pre>
+          </div>
+        </ScrollArea>
       </DialogContent>
     </Dialog>
   );

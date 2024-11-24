@@ -1,11 +1,10 @@
 import { useState } from 'react';
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/use-toast";
-import { Search } from 'lucide-react';
 import { useAuth } from '@/components/AuthProvider';
 import TranscriptSelect from './transcript/TranscriptSelect';
 import TranscriptDisplay from './transcript/TranscriptDisplay';
+import TranscriptInput from './transcript/TranscriptInput';
+import TranscriptError from './transcript/TranscriptError';
 import { extractVideoId } from './transcript/utils';
 import { supabase } from '@/integrations/supabase/client';
 import type { Subtitle } from './transcript/types';
@@ -21,6 +20,7 @@ const TranscriptGenerator = ({ isRTL }: TranscriptGeneratorProps) => {
   const [subtitles, setSubtitles] = useState<Subtitle[]>([]);
   const [selectedLanguage, setSelectedLanguage] = useState('');
   const [videoTitle, setVideoTitle] = useState('');
+  const [error, setError] = useState<Error | null>(null);
   const { toast } = useToast();
   const { user } = useAuth();
 
@@ -37,7 +37,7 @@ const TranscriptGenerator = ({ isRTL }: TranscriptGeneratorProps) => {
     }
 
     try {
-      const { error } = await supabase
+      const { error: saveError } = await supabase
         .from('transcripts')
         .insert({
           user_id: user.id,
@@ -48,37 +48,24 @@ const TranscriptGenerator = ({ isRTL }: TranscriptGeneratorProps) => {
           video_title: videoTitle,
         });
 
-      if (error) {
-        if (error.message.includes('Daily limit')) {
-          toast({
-            title: isRTL ? 'تم الوصول للحد اليومي' : 'Daily Limit Reached',
-            description: isRTL 
-              ? 'لقد وصلت إلى الحد الأقصى اليومي (10 نصوص)'
-              : 'You have reached your daily limit (10 transcripts)',
-            variant: 'destructive',
-          });
-        } else {
-          throw error;
-        }
-      } else {
-        toast({
-          title: isRTL ? 'تم الحفظ!' : 'Saved!',
-          description: isRTL 
-            ? 'تم حفظ النص بنجاح'
-            : 'Transcript saved successfully',
-        });
-      }
+      if (saveError) throw saveError;
+
+      toast({
+        title: isRTL ? 'تم الحفظ!' : 'Saved!',
+        description: isRTL 
+          ? 'تم حفظ النص بنجاح'
+          : 'Transcript saved successfully',
+      });
     } catch (error) {
       console.error('Error saving transcript:', error);
-      toast({
-        title: isRTL ? 'خطأ في الحفظ' : 'Save Error',
-        description: error instanceof Error ? error.message : 'Failed to save transcript',
-        variant: 'destructive',
-      });
+      if (error instanceof Error) {
+        setError(error);
+      }
     }
   };
 
   const generateTranscript = async () => {
+    setError(null);
     const videoId = extractVideoId(url);
     if (!videoId) {
       toast({
@@ -93,7 +80,6 @@ const TranscriptGenerator = ({ isRTL }: TranscriptGeneratorProps) => {
 
     setLoading(true);
     try {
-      // Update the query to use video_id instead of id
       const { data: existingTranscripts, error: fetchError } = await supabase
         .from('transcripts')
         .select('content, video_title')
@@ -147,12 +133,9 @@ const TranscriptGenerator = ({ isRTL }: TranscriptGeneratorProps) => {
       }
     } catch (error) {
       console.error('Error generating transcript:', error);
-      setTranscript('');
-      toast({
-        title: isRTL ? 'حدث خطأ' : 'Error',
-        description: error instanceof Error ? error.message : 'An unknown error occurred',
-        variant: 'destructive',
-      });
+      if (error instanceof Error) {
+        setError(error);
+      }
     } finally {
       setLoading(false);
     }
@@ -185,12 +168,9 @@ const TranscriptGenerator = ({ isRTL }: TranscriptGeneratorProps) => {
       return transcriptText;
     } catch (error) {
       console.error('Error fetching transcript:', error);
-      setTranscript('Failed to load transcript');
-      toast({
-        title: isRTL ? 'حدث خطأ' : 'Error',
-        description: error instanceof Error ? error.message : 'Failed to load the transcript',
-        variant: 'destructive',
-      });
+      if (error instanceof Error) {
+        setError(error);
+      }
       return null;
     }
   };
@@ -203,53 +183,22 @@ const TranscriptGenerator = ({ isRTL }: TranscriptGeneratorProps) => {
     }
   };
 
-  const handleDownload = () => {
-    if (!transcript) return;
-    
-    const blob = new Blob([transcript], { type: 'text/plain' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'transcript.txt';
-    document.body.appendChild(a);
-    a.click();
-    window.URL.revokeObjectURL(url);
-    document.body.removeChild(a);
-    
-    toast({
-      title: isRTL ? 'تم التحميل!' : 'Downloaded!',
-      description: isRTL 
-        ? 'تم تحميل النص بنجاح'
-        : 'Transcript downloaded successfully',
-    });
-  };
-
   return (
     <section className="max-w-2xl mx-auto">
       <div className="bg-white/10 p-6 rounded-lg backdrop-blur-sm">
-        <div className="flex gap-4 mb-6">
-          <Input
-            type="text"
-            placeholder={isRTL ? 'أدخل رابط اليوتيوب' : 'Enter YouTube URL'}
-            value={url}
-            onChange={(e) => setUrl(e.target.value)}
-            className="flex-1 bg-white/20 text-white placeholder:text-gray-400"
-          />
-          <Button 
-            onClick={generateTranscript}
-            disabled={loading}
-            className="bg-primary hover:bg-primary/90"
-          >
-            {loading ? (
-              <div className="animate-spin">⌛</div>
-            ) : (
-              <>
-                <Search className="mr-2 h-4 w-4" />
-                {isRTL ? 'إنشاء' : 'Generate'}
-              </>
-            )}
-          </Button>
-        </div>
+        <TranscriptInput
+          url={url}
+          onUrlChange={setUrl}
+          onGenerate={generateTranscript}
+          loading={loading}
+          isRTL={isRTL}
+        />
+
+        {error && (
+          <div className="mb-6">
+            <TranscriptError error={error} isRTL={isRTL} />
+          </div>
+        )}
 
         {videoTitle && (
           <div className="mb-4 text-white">
@@ -273,7 +222,6 @@ const TranscriptGenerator = ({ isRTL }: TranscriptGeneratorProps) => {
             transcript={transcript}
             transcriptId={extractVideoId(url) || ''}
             videoTitle={videoTitle}
-            onDownload={handleDownload}
             isRTL={isRTL}
           />
         )}
