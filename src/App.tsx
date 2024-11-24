@@ -8,6 +8,7 @@ import Index from "./pages/Index";
 import History from "./pages/History";
 import Login from "./pages/Login";
 import Profile from "./pages/Profile";
+import AllTranscripts from "./pages/AllTranscripts";
 
 const queryClient = new QueryClient();
 
@@ -23,6 +24,7 @@ const App = () => (
             <Route path="/history" element={<History />} />
             <Route path="/login" element={<Login />} />
             <Route path="/profile" element={<Profile />} />
+            <Route path="/all-transcripts" element={<AllTranscripts />} />
           </Routes>
         </BrowserRouter>
       </TooltipProvider>
