@@ -26,8 +26,35 @@ const TranscriptGenerator = ({ isRTL }: TranscriptGeneratorProps) => {
 
   const handleError = (error: any) => {
     console.error('Error:', error);
-    const errorObj = error instanceof Error ? error : new Error(JSON.stringify(error));
-    setError(errorObj);
+    let errorMessage = error;
+    
+    // Try to parse the error message if it's a string
+    if (typeof error === 'string') {
+      try {
+        const parsedError = JSON.parse(error);
+        if (parsedError.message) {
+          errorMessage = parsedError;
+        }
+      } catch (e) {
+        // If parsing fails, use the original error message
+      }
+    }
+    
+    // Handle database error messages
+    if (error.code === 'P0001' && error.message?.includes('Daily limit')) {
+      toast({
+        title: isRTL ? 'تم الوصول للحد اليومي' : 'Daily Limit Reached',
+        description: isRTL 
+          ? 'لقد وصلت إلى الحد الأقصى اليومي (10 نصوص). حاول مرة أخرى غداً.'
+          : 'You have reached your daily limit (10 transcripts). Try again tomorrow.',
+        variant: 'destructive',
+      });
+      setError(new Error('Daily limit reached'));
+    } else {
+      // For other errors, create an Error object with the message
+      const errorObj = error instanceof Error ? error : new Error(JSON.stringify(error));
+      setError(errorObj);
+    }
     setLoading(false);
   };
 
@@ -93,11 +120,15 @@ const TranscriptGenerator = ({ isRTL }: TranscriptGeneratorProps) => {
         .eq('video_id', videoId)
         .eq('language', 'en');
 
-      if (fetchError) throw fetchError;
+      if (fetchError) {
+        handleError(fetchError);
+        return;
+      }
 
       if (existingTranscripts && existingTranscripts.length > 0) {
         setTranscript(existingTranscripts[0].content);
         setVideoTitle(existingTranscripts[0].video_title || '');
+        setLoading(false);
         return;
       }
 
@@ -126,23 +157,36 @@ const TranscriptGenerator = ({ isRTL }: TranscriptGeneratorProps) => {
           setSelectedLanguage(englishSubtitle.languageCode);
           const transcriptText = await fetchTranscript(englishSubtitle.url);
           if (transcriptText) {
-            await saveTranscript(videoId, transcriptText, englishSubtitle.languageCode);
+            try {
+              await saveTranscript(videoId, transcriptText, englishSubtitle.languageCode);
+            } catch (error: any) {
+              if (error?.message?.includes('Daily limit')) {
+                handleError(error);
+                return;
+              }
+              throw error;
+            }
           }
         } else if (data.subtitles.length > 0) {
           setSelectedLanguage(data.subtitles[0].languageCode);
           const transcriptText = await fetchTranscript(data.subtitles[0].url);
           if (transcriptText) {
-            await saveTranscript(videoId, transcriptText, data.subtitles[0].languageCode);
+            try {
+              await saveTranscript(videoId, transcriptText, data.subtitles[0].languageCode);
+            } catch (error: any) {
+              if (error?.message?.includes('Daily limit')) {
+                handleError(error);
+                return;
+              }
+              throw error;
+            }
           }
         }
       } else {
         throw new Error('No subtitles found in the response');
       }
     } catch (error) {
-      console.error('Error generating transcript:', error);
-      if (error instanceof Error) {
-        setError(error);
-      }
+      handleError(error);
     } finally {
       setLoading(false);
     }
