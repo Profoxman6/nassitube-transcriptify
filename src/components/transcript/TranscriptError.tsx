@@ -8,7 +8,11 @@ interface TranscriptErrorProps {
 
 const TranscriptError = ({ error, isRTL }: TranscriptErrorProps) => {
   const getErrorMessage = () => {
-    if (error.message.includes('Daily limit')) {
+    const errorBody = error.message.includes('{') 
+      ? JSON.parse(error.message).body 
+      : error.message;
+    
+    if (errorBody.includes('Daily limit')) {
       return {
         title: isRTL ? 'تم الوصول للحد اليومي' : 'Daily Limit Reached',
         description: isRTL 

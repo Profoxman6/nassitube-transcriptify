@@ -11,7 +11,6 @@ interface TranscriptDisplayProps {
   transcript: string;
   transcriptId: string;
   videoTitle: string;
-  onDownload: () => void;
   isRTL: boolean;
 }
 
@@ -19,13 +18,31 @@ const TranscriptDisplay = ({
   transcript, 
   transcriptId,
   videoTitle,
-  onDownload, 
   isRTL 
 }: TranscriptDisplayProps) => {
   const [summary, setSummary] = useState<string | null>(null);
   const [isOpen, setIsOpen] = useState(false);
   const { user } = useAuth();
   const { toast } = useToast();
+
+  const handleDownload = () => {
+    const blob = new Blob([transcript], { type: 'text/plain' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${videoTitle || 'transcript'}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+    
+    toast({
+      title: isRTL ? 'تم التحميل!' : 'Downloaded!',
+      description: isRTL 
+        ? 'تم تحميل النص بنجاح'
+        : 'Transcript downloaded successfully',
+    });
+  };
 
   const handleCopy = async () => {
     try {
@@ -96,7 +113,7 @@ const TranscriptDisplay = ({
       <div className="flex flex-wrap gap-2 mb-4">
         <Button 
           variant="outline" 
-          onClick={onDownload}
+          onClick={handleDownload}
         >
           <Download className="mr-2 h-4 w-4" />
           {isRTL ? 'تحميل النص' : 'Download Transcript'}

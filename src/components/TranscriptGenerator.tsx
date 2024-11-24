@@ -48,7 +48,12 @@ const TranscriptGenerator = ({ isRTL }: TranscriptGeneratorProps) => {
           video_title: videoTitle,
         });
 
-      if (saveError) throw saveError;
+      if (saveError) {
+        const error = new Error(JSON.stringify(saveError));
+        console.error('Error saving transcript:', error);
+        setError(error);
+        return;
+      }
 
       toast({
         title: isRTL ? 'تم الحفظ!' : 'Saved!',
