@@ -24,6 +24,13 @@ const TranscriptGenerator = ({ isRTL }: TranscriptGeneratorProps) => {
   const { toast } = useToast();
   const { user } = useAuth();
 
+  const handleError = (error: any) => {
+    console.error('Error:', error);
+    const errorObj = error instanceof Error ? error : new Error(JSON.stringify(error));
+    setError(errorObj);
+    setLoading(false);
+  };
+
   const saveTranscript = async (videoId: string, content: string, language: string) => {
     if (!user) {
       toast({
@@ -49,9 +56,7 @@ const TranscriptGenerator = ({ isRTL }: TranscriptGeneratorProps) => {
         });
 
       if (saveError) {
-        const error = new Error(JSON.stringify(saveError));
-        console.error('Error saving transcript:', error);
-        setError(error);
+        handleError(saveError);
         return;
       }
 
@@ -62,10 +67,7 @@ const TranscriptGenerator = ({ isRTL }: TranscriptGeneratorProps) => {
           : 'Transcript saved successfully',
       });
     } catch (error) {
-      console.error('Error saving transcript:', error);
-      if (error instanceof Error) {
-        setError(error);
-      }
+      handleError(error);
     }
   };
 
