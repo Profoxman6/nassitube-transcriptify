@@ -12,7 +12,7 @@ serve(async (req) => {
   }
 
   try {
-    const { transcript, videoTitle, videoId } = await req.json();
+    const { transcript, videoTitle, customPrompt } = await req.json();
 
     if (!transcript) {
       throw new Error('No transcript provided');
@@ -23,14 +23,19 @@ serve(async (req) => {
       throw new Error('Gemini API key not configured');
     }
 
-    // Initialize the Gemini API using fetch since we're in Deno
-    const prompt = `Please provide a concise summary of the following YouTube video transcript. 
+    // Create base prompt
+    let prompt = `Please provide a summary of the following YouTube video transcript.
     Video Title: ${videoTitle || 'Untitled'}
     
     Transcript:
     ${transcript}
     
     Please structure the summary to be clear and informative, highlighting the main points and key takeaways.`;
+
+    // Add custom instructions if provided
+    if (customPrompt) {
+      prompt += `\n\nAdditional Instructions: ${customPrompt}`;
+    }
 
     const response = await fetch('https://generativelanguage.googleapis.com/v1/models/gemini-1.5-pro:generateContent', {
       method: 'POST',
@@ -57,25 +62,6 @@ serve(async (req) => {
 
     const data = await response.json();
     const summary = data.candidates[0].content.parts[0].text;
-
-    // Update the transcript with the summary in Supabase
-    const supabaseUrl = Deno.env.get('SUPABASE_URL');
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-
-    if (!supabaseUrl || !supabaseKey) {
-      throw new Error('Supabase configuration missing');
-    }
-
-    const supabase = createClient(supabaseUrl, supabaseKey);
-
-    const { error: updateError } = await supabase
-      .from('transcripts')
-      .update({ summary })
-      .eq('video_id', videoId);
-
-    if (updateError) {
-      throw updateError;
-    }
 
     return new Response(
       JSON.stringify({ summary }),

@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Download, Copy } from 'lucide-react';
 import { useToast } from "@/components/ui/use-toast";
 import GeminiSummaryButton from './GeminiSummaryButton';
+import EnhancedEditor from './EnhancedEditor';
 import { useAuth } from '@/components/AuthProvider';
 
 interface TranscriptDisplayProps {
@@ -68,9 +69,11 @@ const TranscriptDisplay = ({
 
   return (
     <div className="animate-fade-up space-y-4">
-      <div className="bg-white/5 p-4 rounded-lg mb-4 max-h-60 overflow-y-auto">
-        <p className="text-white whitespace-pre-wrap">{transcript}</p>
-      </div>
+      <EnhancedEditor 
+        content={transcript}
+        isRTL={isRTL}
+        className="mb-4"
+      />
       
       <div className="flex flex-wrap gap-2">
         <Button 
@@ -93,31 +96,30 @@ const TranscriptDisplay = ({
       </div>
 
       {summary && (
-        <div className="bg-white/5 p-4 rounded-lg">
-          <div className="flex justify-between items-center mb-2">
-            <h3 className="text-white font-semibold">
-              {isRTL ? 'الملخص:' : 'Summary:'}
-            </h3>
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleCopySummary}
-              >
-                <Copy className="mr-2 h-4 w-4" />
-                {isRTL ? 'نسخ الملخص' : 'Copy Summary'}
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleDownloadSummary}
-              >
-                <Download className="mr-2 h-4 w-4" />
-                {isRTL ? 'تحميل الملخص' : 'Download Summary'}
-              </Button>
-            </div>
+        <div className="space-y-4">
+          <EnhancedEditor 
+            content={summary}
+            isRTL={isRTL}
+            className="mt-4"
+          />
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleCopySummary}
+            >
+              <Copy className="mr-2 h-4 w-4" />
+              {isRTL ? 'نسخ الملخص' : 'Copy Summary'}
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleDownloadSummary}
+            >
+              <Download className="mr-2 h-4 w-4" />
+              {isRTL ? 'تحميل الملخص' : 'Download Summary'}
+            </Button>
           </div>
-          <p className="text-white whitespace-pre-wrap">{summary}</p>
         </div>
       )}
     </div>
