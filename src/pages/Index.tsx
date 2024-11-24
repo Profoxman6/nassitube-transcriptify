@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Button } from "@/components/ui/button";
-import { User } from "lucide-react";
+import { User, Globe } from "lucide-react";
 import Hero from '@/components/Hero';
 import Features from '@/components/Features';
 import TranscriptGenerator from '@/components/TranscriptGenerator';
@@ -28,6 +28,14 @@ const Index = () => {
       <nav className="p-4 flex justify-between items-center">
         <h1 className="text-2xl font-bold text-white">نصي تيوب - Nassi Tube</h1>
         <div className="flex gap-4">
+          <Button
+            variant="ghost"
+            className="text-white hover:text-white"
+            onClick={() => navigate('/all-transcripts')}
+          >
+            <Globe className="mr-2 h-4 w-4" />
+            {isRTL ? 'المجتمع' : 'Community'}
+          </Button>
           <Button
             variant="ghost"
             className="text-white hover:text-white"
