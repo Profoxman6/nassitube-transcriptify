@@ -6,6 +6,8 @@ export interface Transcript {
   content: string;
   language: string;
   created_at: string;
+  video_title?: string | null;
+  summary?: string | null;
 }
 
 export interface Profile {
